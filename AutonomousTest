@@ -1,0 +1,62 @@
+package org.firstinspires.ftc.teamcode.autonomous;
+
+import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+
+import org.firstinspires.ftc.teamcode.drive.SampleTankDrive;
+import org.firstinspires.ftc.teamcode.subsystems.Extake;
+
+@Autonomous(name="GoBILDA Alliance Auto - DECODE 2025-26", group="Autonomous")
+public class GoBILDAAllianceAutoDecode extends LinearOpMode {
+
+    // Change this before match depending on alliance
+    private boolean isRedAlliance = true; // set false for blue
+
+    @Override
+    public void runOpMode() {
+        SampleTankDrive drive = new SampleTankDrive(hardwareMap);
+        Extake extake = new Extake(hardwareMap);
+
+        Pose2d startPose = new Pose2d(0, 0, 0);
+        drive.setPoseEstimate(startPose);
+
+        // Step 1: Turn toward correct alliance goal
+        Trajectory turnToGoal;
+        if (isRedAlliance) {
+            // Turn left ~30 degrees for red goal
+            turnToGoal = drive.trajectoryBuilder(startPose)
+                    .turn(Math.toRadians(-30))
+                    .build();
+        } else {
+            // Turn right ~30 degrees for blue goal
+            turnToGoal = drive.trajectoryBuilder(startPose)
+                    .turn(Math.toRadians(30))
+                    .build();
+        }
+
+        // Step 2: Drive forward to shooting point
+        Trajectory toShootingPoint = drive.trajectoryBuilder(turnToGoal.end())
+                .forward(36)
+                .build();
+
+        waitForStart();
+
+        if (opModeIsActive()) {
+            // Turn toward alliance goal
+            drive.followTrajectory(turnToGoal);
+
+            // Drive forward to shooting point
+            drive.followTrajectory(toShootingPoint);
+
+            // Shoot 3 balls
+            extake.runExtake(1.0);
+            sleep(3000);
+            extake.stop();
+
+            // Stop and hold position
+            drive.setMotorPowers(0, 0);
+        }
+    }
+}
